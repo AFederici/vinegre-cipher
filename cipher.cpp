@@ -1,4 +1,4 @@
-#include <iostream> 
+#include <iostream>
 #include <string>
 #include<fstream>
 #include<vector>
@@ -9,6 +9,54 @@
 #include <deque>
 
 using namespace std;
+
+//this function is very inefficient
+string fileToString(string file){ //.txt file
+	ifstream ifs(file);
+	string str( (istreambuf_iterator<char>(ifs) ), (istreambuf_iterator<char>()));
+	string str2;
+	std::remove_copy_if(str.begin(), str.end(),
+                        std::back_inserter(str2), //Store output
+                        std::ptr_fun<int, int>(&std::ispunct)
+                       );
+
+	string::iterator end_pos = remove(str2.begin(), str2.end(), ' ');
+	str2.erase(std::remove(str2.begin(), str2.end(), '\n'), str2.end());
+	str2.erase(end_pos, str2.end());
+	for(auto elem : str2){
+		tolower(elem);
+	}
+	return str2;
+
+}
+
+string encrypt(string str, string key)
+{
+    string cipher_text;
+
+    for (int i = 0; i < str.size(); i++)
+    {
+        // converting in range 0-25
+        int x = (((str[i] - 'a') + (key[i%key.length()] - 'a')) % 26)  + 'a';
+        // convert into alphabets(ASCII)
+
+        cipher_text.push_back(char(x));
+    }
+    return cipher_text;
+}
+
+string decrypt(string cipher_text, string key)
+{
+    string orig_text;
+
+    for (int i = 0 ; i < cipher_text.size(); i++)
+    {
+        // converting in range 0-25
+        int x = (cipher_text[i] - key[i%key.length()] + 26) % 26 + 'a';
+        orig_text.push_back(x);
+    }
+    return orig_text;
+}
 
 int gcd(int a,int b) {
     int temp;
@@ -24,12 +72,12 @@ int findSpacing(int ind, int sub){
 	int index = ind; //should start as 0
 	int sub_size = sub;
 	vector<size_t> arr; // holds all the positions that sub occurs within str
-	ifstream ifs("example.txt");
+	ifstream ifs("example2.txt");
 	if (ifs)
 	{
 		string content( (istreambuf_iterator<char>(ifs) ), (istreambuf_iterator<char>()));
 		string firstTwo = content.substr(index,sub_size);
-		
+
 
 		size_t pos = content.find(firstTwo, ind);
 		while(pos != string::npos)
@@ -37,29 +85,29 @@ int findSpacing(int ind, int sub){
 			arr.push_back(pos);
 			pos = content.find(firstTwo,pos+1);
 		}
-		
+
 		return accumulate(arr.begin(), arr.end(), arr[0], gcd);
-		
+
 	}
 
-	else cout << "Unable to open file"; 
+	else cout << "Unable to open file";
 	return -1;
 }
 
 
 int findSpacingPtTwo(){
 	vector<int> composition;
-	int s_list[4] = {2, 3, 4, 5}; //bigram analysis
+	int s_list[2] = {2, 3}; //bigram analysis
 	for(int a = 0; a < sizeof(s_list)/sizeof(s_list[0]); ++a ){
 		int s = s_list[a];
-		for (int i = 0; i < 10;  ++i)
+		for (int i = 0; i < 100;  ++i)
 		{
 			int x = findSpacing(i, s);
 			if (x > 1){ composition.push_back(x);}
-			
+
 		}
 	}
-	
+
 	int max = 0;
 	int mostvalue = composition[0];
     for(int i=0; i<composition.size(); i++)
@@ -70,18 +118,17 @@ int findSpacingPtTwo(){
                 mostvalue = composition[i];
         }
     }
-	
+
 	return mostvalue;
 }
-	
+
 vector<vector<string>> findKeyWord(vector<int> len){
 
-	
-	ifstream ifs("example.txt");
+	ifstream ifs("example2.txt");
 	vector<vector<string>> keys;
 	string content( (istreambuf_iterator<char>(ifs) ), (istreambuf_iterator<char>()));
 	int totalLetters = content.length();
-	
+
 	for (int a = 0; a < sizeof(len)/sizeof(len[0]); ++a ) //goes thorugh the different possible key lengths (runs 3 times max)
 	{
 		int increment = len[a];
@@ -94,7 +141,7 @@ vector<vector<string>> findKeyWord(vector<int> len){
 			};
 		for(auto& p : my_map) {
 			p.second = p.second * (totalLetters * 1.0 / increment) / 100;
-		}	
+		}
 		vector<string> columnKey;
 		map<char, int> usedUp;
 		for (int x = 0; x < increment; ++x){ //goes through the columns
@@ -120,7 +167,7 @@ vector<vector<string>> findKeyWord(vector<int> len){
 					chi += (my_map[p.first] - mapOfWords[char(p.first + (shift % 26))]) * (my_map[p.first] - mapOfWords[char(p.first + (shift % 26))]);
 				}
 				if (chi < best_chi[0] && chi < best_chi[1]){
-					
+
 					best_chi.push_front(chi);
 					best_shift.push_front(char('a'+shift));
 					best_chi.pop_back();
@@ -137,28 +184,28 @@ vector<vector<string>> findKeyWord(vector<int> len){
 					best_shift.push_back(char('a'+shift));
 				}
 			}
-			
+
 			//usedUp[best_shift] = 1;
 			cout << best_shift[0] << " , " << best_shift[1] << endl;
 			string send = best_shift[0] + " ; " + best_shift[1];
 
-			
-			
-			
-			
+
+
+
+
 			columnKey.push_back(send);
-			
+
 		}
-		
+
 		keys.push_back(columnKey);
-		
-		
+
+
 	}
 	return keys;
-	
+
 }
-	
-int main(){
+
+void solver(){
 	vector<int> possibleLens;
 	int multiple = findSpacingPtTwo();	//the answer is this number or a multiple of it (ex: 3 means it could be a 3 or 6 keyword most likely)
 	cout << "Multiple of: " << multiple << endl << endl;
@@ -168,13 +215,19 @@ int main(){
 		case 4: possibleLens.push_back(4); possibleLens.push_back(8); break;
 		default: possibleLens.push_back(multiple);
 	}
-	
+
 	vector<vector<string>> answer = findKeyWord(possibleLens);
-	//for (int a = 0; a < sizeof(answer)/sizeof(answer[0]); ++a ){
-		//for (auto x : answer[a]){
-			//cout << x << endl;
-		//}
-		//cout << endl;
-	//}
+}
+
+
+
+int main(){
+	string sentence = fileToString("example.txt");
+	//cout << "text" << endl << sentence << endl << endl;
+	string encryption = encrypt(sentence, "secret");
+	//cout << "encryption" << endl << encryption << endl << endl;
+
+	//solver();
+	cout << "decryption " << endl << decrypt(encryption, "secret");
 	return 0;
 }
